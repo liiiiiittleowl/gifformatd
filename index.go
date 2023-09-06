@@ -101,3 +101,14 @@ func(the Constrained[T]) Check(val any) (e error) {
 
 	return nil;
 }
+
+
+type Unconstrained struct{
+	Constrained reflect.Type
+}
+func(the Unconstrained) GetConstrained() (constrained reflect.Type) {
+	return the.Constrained;
+}
+func(Unconstrained) Check(val any) (e error) {
+	return nil;
+}
