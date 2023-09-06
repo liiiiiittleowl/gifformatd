@@ -8,6 +8,51 @@ import (
 
 
 
+var _StructureBuilder StructureBuilder;
+func InitStructureBuilder(builder StructureBuilder) {
+	if builder == nil {return;}
+
+	_StructureBuilder = builder;
+}
+
+var _Types = map[reflect.Type]*Type{};
+func Register(formats ...Format) {
+	for _, format := range formats {
+		constrained := format.GetConstrained();
+		if pointer, has := _Types[constrained]; has {
+			pointer.Format = format;
+		} else {
+			_Types[constrained] = &Type{
+				Structure: _StructureBuilder(constrained),
+				Format: format,
+			};
+		}
+	}
+}
+func Get(described reflect.Type) (typ Type) {
+	if pointer, has := _Types[described]; has {
+		return *pointer;
+	} else {
+		typ := Type{
+			Structure: _StructureBuilder(described),
+			Format: Unconstrained{Constrained: described},
+		};
+
+		_Types[described] = &typ;
+
+		return typ;
+	}
+}
+func Check(val any) (e error) {
+	described := reflect.TypeOf(val);
+	typ := Get(described);
+
+	return typ.Check(val);
+}
+
+
+
+
 type Structure interface{
 	GetDescribed() (reflectType reflect.Type)
 	Check(val any) (e error)
