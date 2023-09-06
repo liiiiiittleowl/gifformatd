@@ -8,6 +8,66 @@ import (
 
 
 
+func init() {
+	if _StructureBuilder != nil {return;}
+	_StructureBuilder = func(described reflect.Type) (structure Structure) {
+		switch described.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64 :
+			return Integer{Described: described};
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64 :
+			return Integer{Described: described};
+		case reflect.Float32, reflect.Float64 :
+			return Float{Described: described};
+		case reflect.Bool :
+			return Boolean{Described: described};
+		case reflect.String :
+			return String{Described: described};
+
+
+		case reflect.Array :
+			if described.Name() == `byte` {
+				return Bytes{Described: described};
+			} else {
+				return Array{
+					Described: described,
+					Element: Get(described),
+				};
+			}
+		case reflect.Map :
+			return Map{
+				Described: described,
+				Key: Get(described.Key()),
+				Element: Get(described.Elem()),
+			};
+		case  reflect.Struct :
+			return Object{
+				Described: described,
+				Fields: func() []Field {
+					fields := make([]Field, described.NumField());
+					for i := range fields {
+						refField := described.Field(i);
+
+						fields[i] = Field{
+							Type: Get(refField.Type),
+							Name: refField.Name,
+							Tags: map[string]string{},
+						};
+					}
+
+					return fields;
+				}(),
+			};
+
+
+		default:
+			return Other{Described: described};
+		}
+	};
+}
+
+
+
+
 var _StructureBuilder StructureBuilder;
 func InitStructureBuilder(builder StructureBuilder) {
 	if builder == nil {return;}
